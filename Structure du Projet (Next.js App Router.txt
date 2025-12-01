@@ -1,0 +1,26 @@
+/app
+├── layout.tsx                  → Layout global (header, footer)
+├── page.tsx                    → Landing page (hero + sections)
+├── features/page.tsx           → Page features détaillées
+├── pricing/page.tsx            → Page pricing (tiers adaptés Togo)
+├── demo/page.tsx               → Form demande démo + scheduling
+├── login/page.tsx              → Login (redirige vers backoffice)
+├── website-builder/page.tsx    → Builder site hôtel (inspiré Amenitiz)
+├── testimonials/page.tsx      → Tous témoignages
+├── blog/page.tsx               → Blog/resources (statique pour l'instant)
+├── dashboard/                  → Backoffice (de mes réponses précédentes : reservations, etc.)
+│   └── page.tsx
+└── auth/                       → Auth middleware (NextAuth pour JWT)
+
+components/
+├── Hero.tsx                    → Hero section
+├── Benefits.tsx                → Bénéfices
+├── Features.tsx                → Features cards
+├── Testimonials.tsx            → Témoignages carousel
+├── Timeline.tsx                → Onboarding timeline
+├── Integrations.tsx            → Partenaires
+├── FAQ.tsx                     → Accordéon FAQs
+├── CTA.tsx                     → CTA réutilisable
+├── Header.tsx                  → Navigation
+├── Footer.tsx                  → Footer
+└── DemoForm.tsx                → Form démo

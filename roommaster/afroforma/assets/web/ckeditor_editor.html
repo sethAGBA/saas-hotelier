@@ -1,0 +1,123 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>CKEditor Embedded</title>
+    <script src="https://cdn.ckeditor.com/ckeditor5/39.0.0/classic/ckeditor.js"></script>
+    <style>
+      body { margin: 0; font-family: Arial, sans-serif; }
+      #editor { height: 100vh; }
+    </style>
+  </head>
+  <body>
+    <div id="toolbar" style="padding:8px;background:#f5f5f5;border-bottom:1px solid #ddd;display:flex;gap:8px;align-items:center;">
+      <button onclick="requestSave()">Save</button>
+      <button id="uploadBtn">Upload image</button>
+      <input id="fileInput" type="file" accept="image/*" style="display:none;" />
+    </div>
+    <div id="editor"></div>
+
+    <script>
+      let editor;
+      const uploadResolvers = {};
+
+      function sendToDart(obj) {
+        const s = JSON.stringify(obj);
+        if (window.Dart && window.Dart.postMessage) {
+          window.Dart.postMessage(s);
+        }
+      }
+
+      function loadContent(html) {
+        if (editor) {
+          editor.setData(html);
+        }
+      }
+
+      function requestSave() {
+        if (!editor) return;
+        const html = editor.getData();
+        sendToDart({ action: 'save', html: html });
+      }
+
+      // Called by Dart when an image upload finished. Expects a JS object
+      // with { action: 'uploaded', url: 'file:///...', uploadId: '...' }
+      function onImageUploaded(respObj) {
+        try {
+          const obj = typeof respObj === 'string' ? JSON.parse(respObj) : respObj;
+          const uploadId = obj.uploadId;
+          const url = obj.url;
+          // If an upload resolver function exists, call it (upload adapter)
+          if (uploadId && uploadResolvers[uploadId]) {
+            uploadResolvers[uploadId]({ default: url });
+            delete uploadResolvers[uploadId];
+            return;
+          }
+          // Otherwise, fallback: directly insert the image into the editor at selection
+          if (editor && url) {
+            editor.model.change(writer => {
+              const imageElement = writer.createElement('image', { src: url });
+              editor.model.insertContent(imageElement, editor.model.document.selection);
+            });
+          }
+        } catch (e) {
+          console.error('onImageUploaded error', e);
+        }
+      }
+
+      // Wire the standalone upload button to send the selected file to Dart
+      document.getElementById('uploadBtn').addEventListener('click', () => {
+        document.getElementById('fileInput').click();
+      });
+
+      document.getElementById('fileInput').addEventListener('change', (ev) => {
+        const input = ev.target;
+        if (!input.files || input.files.length === 0) return;
+        const file = input.files[0];
+        const reader = new FileReader();
+        const uploadId = 'u_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
+        reader.onload = () => {
+          const dataUrl = reader.result;
+          const base64 = dataUrl.split(',')[1];
+          sendToDart({ action: 'uploadImage', data: base64, filename: file.name, uploadId });
+        };
+        reader.readAsDataURL(file);
+      });
+
+      class DartUploadAdapter {
+        constructor(loader) {
+          this.loader = loader;
+        }
+
+        upload() {
+          return this.loader.file.then(file => new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            const uploadId = 'u_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
+            reader.onload = () => {
+              try {
+                const dataUrl = reader.result;
+                const base64 = dataUrl.split(',')[1];
+                // send base64 to Dart with uploadId, Dart should call window.onImageUploaded with the same uploadId
+                sendToDart({ action: 'uploadImage', data: base64, filename: file.name, uploadId });
+                // store resolver
+                uploadResolvers[uploadId] = resolve;
+              } catch (e) { reject(e); }
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+          }));
+        }
+
+        abort() {
+          // noop for now
+        }
+      }
+
+      ClassicEditor.create(document.querySelector('#editor'), {
+        extraPlugins: [ editor => {
+          editor.plugins.get('FileRepository').createUploadAdapter = loader => new DartUploadAdapter(loader);
+        }]
+      }).then(ed => { editor = ed; sendToDart({ action: 'ready' }); }).catch(error => console.error(error));
+    </script>
+  </body>
+</html>

@@ -1,0 +1,74 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Collection administrateurs: seuls les administrateurs existants peuvent gérer les autres.
+    // Tout utilisateur authentifié peut lire son propre document administrateur (pour vérifier son statut).
+    match /administrateurs/{adminId} {
+      // Self can read own admin doc
+      allow get: if request.auth != null && request.auth.uid == adminId;
+      // Les administrateurs peuvent lister les administrateurs
+      allow list: if request.auth != null && exists(/databases/$(database)/documents/administrateurs/$(request.auth.uid));
+      // Bootstrap : autoriser un utilisateur connecté à créer son propre doc administrateur une seule fois (s'il n'existe pas)
+      allow create: if request.auth != null && request.auth.uid == adminId &&
+                    !exists(/databases/$(database)/documents/administrateurs/$(adminId))
+                    || (request.auth != null && exists(/databases/$(database)/documents/administrateurs/$(request.auth.uid)));
+      // Modifications/suppressions requièrent un administrateur existant
+      allow update, delete: if request.auth != null && exists(/databases/$(database)/documents/administrateurs/$(request.auth.uid));
+    }
+
+    // Messages under users/{userId}/messages can only be created by administrateurs.
+    // Users can read their own messages.
+    match /users/{userId}/messages/{messageId} {
+      allow create: if request.auth != null && exists(/databases/$(database)/documents/administrateurs/$(request.auth.uid));
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow update, delete: if false;
+    }
+
+    // Allow authenticated users to read their own user document; protect writes.
+    match /users/{userId} {
+      allow get: if request.auth != null && request.auth.uid == userId;
+      allow create: if request.auth != null && request.auth.uid == userId; // allow signup flow
+      allow update: if request.auth != null && request.auth.uid == userId;
+      allow delete: if false;
+    }
+
+    // Public read for courses and related documents (adjust as needed).
+    match /courses/{document=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Collections synchronisées (app desktop) — lecture pour authentifiés, écriture pour administrateurs
+    match /formations/{docId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && exists(/databases/$(database)/documents/administrateurs/$(request.auth.uid));
+    }
+    match /etudiants/{docId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && exists(/databases/$(database)/documents/administrateurs/$(request.auth.uid));
+    }
+    match /sessions/{docId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && exists(/databases/$(database)/documents/administrateurs/$(request.auth.uid));
+    }
+    match /inscriptions/{docId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && exists(/databases/$(database)/documents/administrateurs/$(request.auth.uid));
+    }
+    match /student_payments/{docId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && exists(/databases/$(database)/documents/administrateurs/$(request.auth.uid));
+    }
+    match /documents/{docId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && exists(/databases/$(database)/documents/administrateurs/$(request.auth.uid));
+    }
+
+    // Default deny for anything else.
+    match /{document=**} {
+      allow read: if false;
+      allow write: if false;
+    }
+  }
+}
