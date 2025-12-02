@@ -2,12 +2,19 @@
   "name": "saas-hotelier",
   "private": true,
   "workspaces": [
-    "apps/web"
+    "apps/web",
+    "services/api"
   ],
   "scripts": {
     "dev:web": "npm run dev --workspace apps/web",
     "build:web": "npm run build --workspace apps/web",
     "lint:web": "npm run lint --workspace apps/web",
     "start:web": "npm run start --workspace apps/web"
+  },
+  "dependencies": {
+    "date-fns": "^4.1.0",
+    "lucide-react": "^0.555.0",
+    "next-auth": "^5.0.0-beta.30",
+    "recharts": "^3.5.1"
   }
 }

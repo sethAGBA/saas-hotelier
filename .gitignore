@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build artifacts
+.next/
+out/
+dist/
+build/
+coverage/
+.turbo/
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# OS / editor noise
+.DS_Store
+.vscode/
+
+# Flutter / Android
+**/.dart_tool/
+**/android/.gradle/
+**/android/local.properties
+**/build/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/.packages

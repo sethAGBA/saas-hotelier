@@ -1,0 +1,91 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// Basic multi-tenant tables
+model Tenant {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  users       User[]
+  rooms       Room[]
+  reservations Reservation[]
+}
+
+model User {
+  id          String   @id @default(cuid())
+  tenantId    String
+  email       String   @unique
+  passwordHash String
+  role        UserRole @default(STAFF)
+  isActive    Boolean  @default(true)
+  lastLogin   DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+}
+
+enum UserRole {
+  ADMIN
+  MANAGER
+  STAFF
+}
+
+model Room {
+  id          String   @id @default(cuid())
+  tenantId    String
+  number      String
+  type        String?
+  status      RoomStatus @default(AVAILABLE)
+  floor       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  reservations Reservation[]
+
+  @@unique([tenantId, number])
+}
+
+enum RoomStatus {
+  AVAILABLE
+  OCCUPIED
+  DIRTY
+  MAINTENANCE
+}
+
+model Reservation {
+  id          String   @id @default(cuid())
+  tenantId    String
+  roomId      String?
+  guestName   String
+  checkIn     DateTime
+  checkOut    DateTime
+  status      ReservationStatus @default(CONFIRMED)
+  amount      Decimal? @db.Decimal(12, 2)
+  deposit     Decimal? @db.Decimal(12, 2)
+  source      String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  room        Room?    @relation(fields: [roomId], references: [id])
+
+  @@index([tenantId])
+  @@index([roomId])
+}
+
+enum ReservationStatus {
+  CONFIRMED
+  PROVISIONAL
+  CANCELLED
+  CHECKED_IN
+  CHECKED_OUT
+  NO_SHOW
+}

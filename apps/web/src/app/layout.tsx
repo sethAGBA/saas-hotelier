@@ -8,7 +8,7 @@ import { ThemeProvider } from 'next-themes';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata = {
-  title: 'TogoStay Pro - Gestion Hôtelière Tout-en-Un pour Hôtels Indépendants au Togo',
+  title: 'HotelFlow Pro - Gestion Hôtelière Tout-en-Un pour Hôtels Indépendants au Togo',
   description: 'Logiciel SaaS pour hôtels, lodges et B&B au Togo : Réservations, Paiements Flooz, Tarification Dynamique.',
 };
 

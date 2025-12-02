@@ -1,24 +1,42 @@
 "use client";
-import { useState } from 'react';
+
+// components/DemoForm.tsx (Form simple, submit à API)
+import { useForm } from 'react-hook-form';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Calendar } from '@/components/ui/calendar'; // Shadcn calendar
+
+type DemoFormValues = {
+  name: string;
+  email: string;
+  hotel: string;
+  date?: string;
+};
 
 export default function DemoForm() {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    // Replace with real API call
-    console.log('Demo request', { name, email });
-    alert('Merci — nous vous contacterons bientôt.');
-    setName('');
-    setEmail('');
-  }
+  const { register, handleSubmit, setValue } = useForm<DemoFormValues>();
+  const onSubmit = (data: DemoFormValues) => console.log(data); // Envoyer à API NestJS
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-4 max-w-md">
-      <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nom de l'hôtel / contact" className="p-3 border rounded" />
-      <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" className="p-3 border rounded" />
-      <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded">Demander une démo</button>
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <div>
+        <Label htmlFor="name">Nom</Label>
+        <Input id="name" {...register('name')} />
+      </div>
+      <div>
+        <Label htmlFor="email">Email</Label>
+        <Input id="email" type="email" {...register('email')} />
+      </div>
+      <div>
+        <Label htmlFor="hotel">Nom de l&apos;Hôtel</Label>
+        <Input id="hotel" {...register('hotel')} />
+      </div>
+      <div>
+        <Label>Sélectionnez une Date</Label>
+        <Calendar mode="single" onChange={(value) => setValue('date', value)} /> {/* Scheduling basique */}
+      </div>
+      <Button type="submit" className="w-full">Planifier la Démo</Button>
     </form>
   );
 }
